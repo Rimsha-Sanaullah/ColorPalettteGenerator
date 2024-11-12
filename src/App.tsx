@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import CopyImg from './icons8-copy-24.png';
+import LockSVG from './LockSVG';
+import UnlockSVG from './UnlockSVG';
 import './App.css';
-import CheckedImg from './checked.png';
 
 interface Color {
   name: string;
@@ -33,6 +33,7 @@ function getRandomItems(arr: Color[], n: number): Color[] {
 
 function App() {
   const [palette, setPalette] = useState<Palette>({ colors: [] });
+  const [locked, setLocked] = useState(false);
 
   const fetchColors = () => {
     fetch('/colors.json')
@@ -47,8 +48,8 @@ function App() {
 
   useEffect(() => {
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        fetchColors(); // Simulate refresh by fetching the data again
+      if (e.code === 'Space' && !locked) {
+        fetchColors();
       }
     };
 
@@ -57,14 +58,30 @@ function App() {
     return () => {
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []); // Empty array means this effect runs only once after initial render
-
+  }, [locked]);
+  useEffect(() => {
+    const handleClick = (e: TouchEvent) => {
+      if (e.touches.length === 1 && !locked) {
+        fetchColors();
+      }
+    };
+  
+    window.addEventListener('touchstart', handleClick);
+  
+    return () => {
+      window.removeEventListener('touchstart', handleClick);
+    };
+  }, [locked]);
+  
   if (!palette || palette.colors.length === 0) {
     return <h1>Loading...</h1>;
   }
 
   const randomColors = getRandomItems(palette.colors, 4); // Get 4 random colors
+  const handleLock = ()=>{
+    setLocked((prevLock)=>!prevLock);
 
+  }
   return (
     <>
       <ul>
@@ -72,16 +89,10 @@ function App() {
           <li key={color.id} className='listItem' style={{ backgroundColor: `#${color.hex}` }}>
             {color.name}
             <p>{`#${color.hex}`}</p>
-            <img
-              src={CopyImg}
-              alt='copy'
-              onClick={() => {
-                navigator.clipboard.writeText(`#${color.hex}`);
-              }}
-            />
           </li>
         ))}
       </ul>
+      <button className='button' onClick={handleLock}>{locked ? <UnlockSVG /> : <LockSVG />}</button>
     </>
   );
 }
